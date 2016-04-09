@@ -5,6 +5,8 @@
 // @description  Control soundcloud/spotify instances from any tab or browser
 // @author       Henry Arneson
 // @match        *://*/*
+// @exclude      *://github.com/*
+// @exclude      *://gist.github.com/*
 // @grant        none
 // @require      https://cdn.pubnub.com/pubnub-3.14.4.js
 // @require      http://code.jquery.com/jquery-latest.js
@@ -14,21 +16,23 @@
 'use strict';
 
 // Your code here...
+this.$ = this.jQuery = jQuery.noConflict(true);
+
 var SUB_KEY = "sub-xxx"
 var PUB_KEY = "pub-xxx"
 var database = {}
 var mediaControls = {}
 var themeColor = "#84bd00"
 
-var isSoundcloud = function() {
+var isSoundcloud = function () {
     return (location.hostname === 'soundcloud.com')
 }
 
-var isSpotify = function() {
+var isSpotify = function () {
     return (location.hostname === 'play.spotify.com')
 }
 
-var execCommand = function(cmd) {
+var execCommand = function (cmd) {
     if (JSON.stringify(mediaControls) == '{}') {
         var playControls = null
 
@@ -45,21 +49,20 @@ var execCommand = function(cmd) {
     mediaControls[cmd].click()
 }
 
-var updateDatabase = function(database) {
+var updateDatabase = function (database) {
     var databaseClone = $.extend(true, {}, database)
 
     database = {}
 
     try {
-        if (isSoundcloud()){
-            
-            database.art = $(".playControls__soundBadge").find('a.sc-media-image').find('span').css('background-image').replace('t50x50','t200x200')
+        if (isSoundcloud()) {
+
+            database.art = $(".playControls__soundBadge").find('a.sc-media-image').find('span').css('background-image').replace('t50x50', 't200x200')
             database.songTitle = $(".playbackSoundBadge__title").attr('title')
             database.playing = $(".playControls__playPauseSkip").children().eq(1).hasClass('playing')
             database.themeColor = '#f50'
-        
-        } 
-        else if (isSpotify()) {
+
+        } else if (isSpotify()) {
             var iframeContents = $("#app-player").contents()
 
             database.art = iframeContents.find("#cover-art").find("div.sp-image-img").css('background-image')
@@ -68,7 +71,7 @@ var updateDatabase = function(database) {
             database.themeColor = '#84bd00'
 
         }
-    } catch(err){}
+    } catch (err) {}
 
     var hasChanged = !(JSON.stringify(database) === JSON.stringify(databaseClone))
 
@@ -76,7 +79,7 @@ var updateDatabase = function(database) {
 
 }
 
-var updateDom = function(database) {
+var updateDom = function (database) {
     artDiv.css('background-image', database.art)
     title.html(database.songTitle)
 
@@ -96,19 +99,19 @@ var updateDom = function(database) {
 
 setInterval(function () {
     var newData = updateDatabase(database);
-    
+
     database = newData[0]
-    
+
     var hasChanged = newData[1]
 
     if (hasChanged) send(pubnub, 'data', database)
 
-},300)
+}, 300)
 
 
 
 
-var send = function(pub, channel, data) {
+var send = function (pub, channel, data) {
     pub.publish({
         channel: channel,
         message: {
@@ -126,20 +129,20 @@ var pubnub = PUBNUB({
 
 pubnub.subscribe({
     channel: 'command',
-    callback: function(m) {
+    callback: function (m) {
         if (isSoundcloud() || isSpotify()) execCommand(m.data)
     },
-    error: function(err) {
+    error: function (err) {
         console.log(err);
     }
 });
 
 pubnub.subscribe({
     channel: 'data',
-    callback: function(m) {
+    callback: function (m) {
         updateDom(m.data)
     },
-    error: function(err) {
+    error: function (err) {
         console.log(err)
     }
 });
@@ -158,31 +161,29 @@ var codeToChar = {
 }
 
 var keyMap = {
-    65: function(){prev.click()},
-    83: function(){playPause.click()},
-    68: function(){next.click()},
-    72: function(){mainContainer.fadeToggle(400)}
+    65: function () {prev.click()},
+    83: function () {playPause.click()},
+    68: function () {next.click()},
+    72: function () {mainContainer.fadeToggle(400)}
 }
 
 var altPressed = false;
 var shiftPressed = false;
 
-$(document).keydown(function(key) {
+$(document).keydown(function (key) {
     if (key.keyCode == 16) {
         shiftPressed = true
-    }
-    else if (key.keyCode == 18) {
+    } else if (key.keyCode == 18) {
         altPressed = true
-    }
-    else if (!$('input').is(':focus') && key.keyCode in keyMap) {
+    } else if (!$('input').is(':focus') && key.keyCode in keyMap) {
         if (altPressed) keyMap[key.keyCode]()
     }
 });
 
-$(document).keyup(function(key) {
-    if(key.keyCode == 16) {
+$(document).keyup(function (key) {
+    if (key.keyCode == 16) {
         shiftPressed = false
-    }else if (key.keyCode == 18) {
+    } else if (key.keyCode == 18) {
         altPressed = false
     }
 })
@@ -285,41 +286,45 @@ var next = $("<a/>", {
     .append('<i class="material-icons">skip_next</i>')
     .appendTo(controlsDiv)
 
-
-
-$("head").append('<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">')
-
-mainContainer.appendTo($("html"))
 mainContainer.draggable();
 
 mainContainer.find("i.material-icons").css({
     'font-size': '50px'
 })
 
-$('body').append("<style>.SCC-commandButton { all: initial; * { all: unset; } }</style>")
 
-$(".SCC-commandButton")
-    .css({
-        color: 'black',
-        'text-decoration': 'none',
-        cursor: 'pointer'
-    })
-    
-    .mousedown(function(){
-        $(this).css('color', themeColor)
-    })
-    .mouseup(function(){
-        $(this).css('color', 'black')
+var insertHtml = function () {
+    $("head").append('<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">')
+    $('html').append("<style>a.SCC-commandButton, a.SCC-commandButton:hover, a.SCC-commandButton:active { all: initial; * { all: unset; } }</style>")
+    mainContainer.appendTo($("html"))
+
+    $(".SCC-commandButton")
+        .css({
+            color: 'black',
+            'text-decoration': 'none',
+            cursor: 'pointer',
+            border: 'none'
+        })
+
+        .mousedown(function () {
+            $(this).css('color', themeColor)
+        })
+        .mouseup(function () {
+            $(this).css('color', 'black')
+        })
+
+        .click(function () {
+            send(pubnub, 'command', $(this).attr('data-command'))
+        })
+
+    $(".SCC-commandButton").css('color', 'inherit')
+
+    $("#SCC-playPause").click(function () {
+        var icon = $(this).children().eq(0)
+        if (icon.html() == 'play_arrow') icon.html('pause')
+        else if (icon.html() == 'pause') icon.html('play_arrow')
     })
 
-    .click(function() {
-        send(pubnub, 'command', $(this).attr('data-command'))
-    })
+}
 
-$("#SCC-playPause").click(function(){
-    var icon = $(this).children().eq(0)
-    if (icon.html() == 'play_arrow') icon.html('pause')
-    else if (icon.html() == 'pause') icon.html('play_arrow')
-})
-    
-
+insertHtml()
