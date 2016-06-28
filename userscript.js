@@ -18,8 +18,8 @@
 // Your code here...
 this.$ = this.jQuery = jQuery.noConflict(true);
 
-var SUB_KEY = "sub-xxx";
-var PUB_KEY = "pub-xxx";
+var SUB_KEY = "sub-c-728fc9d6-eeeb-11e5-872f-02ee2ddab7fe";
+var PUB_KEY = "pub-c-4d512ef2-a84a-472d-a931-6c3aa8280e01";
 var database = {};
 var mediaControls = {};
 var themeColor = "#84bd00";
@@ -87,6 +87,7 @@ var updateDatabase = function (database) {
             database.songTitle = iframeContents.find("#track-name").find('a').html();
             database.playing = isPlaying();
             database.themeColor = '#84bd00';
+            database.songLength = toSeconds(iframeContents.find("#track-length").html());
             database.songProgress = null;
 
         }
@@ -100,6 +101,7 @@ var updateDatabase = function (database) {
 
 var getSongProgress = function() {
     if (isSoundcloud()) return toSeconds($(".playbackTimeline__timePassed").children().eq(1).html());
+    else if (isSpotify()) return toSeconds($("#app-player").contents().find("#track-current").html());
 };
 
 var getStartTime = function() {
@@ -151,6 +153,8 @@ var updateDom = function (database) {
     progressBar.attr('max', database.songLength);
     if (database.songProgress !== null) progressBar.val(database.songProgress);
 
+    progressBar.removeClass('sc');
+    if (themeColor.toLowerCase() == "#f50") progressBar.addClass('sc');
 };
 
 setInterval(function () {
@@ -328,6 +332,7 @@ var progressBar = $("<progress/>", {
     height: '3px'
 })
 .attr('max', '100')
+.attr('themeColor', '#f50')
 .val('0')
 .appendTo(progressDiv);
 
@@ -343,6 +348,11 @@ var progressCss = `
 }
 
 #SCC-progress::-webkit-progress-value {
+    background: ` + themeColor + `;
+    transition: all .5s linear;
+}
+
+#SCC-progress.sc::-webkit-progress-value {
     background: #f50;
 }
 </style>
